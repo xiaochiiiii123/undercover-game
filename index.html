@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>誰是臥底：AI 偵探版 v3</title>
+    <title>誰是臥底：AI 偵探版 v4</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -262,12 +262,14 @@
             display: flex;
             justify-content: space-around;
         }
-        .answer-diff {
-            font-size: 0.8rem;
+        .answer-meta {
+            font-size: 0.79rem;
             color: var(--muted);
-            text-align: center;
             border-top: 1px solid var(--border);
             padding-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
         }
         .players {
             display: flex;
@@ -529,17 +531,17 @@ const DIFF_CONFIG = {
     easy: {
         label: '簡單',
         chances: 2,
-        promptRule: '難度為【簡單】：請挑選同領域但有明顯區別的兩種不同事物。每句線索描述具體直白，讓玩家比較容易聽出誰拿的詞不一樣。'
+        promptRule: '難度為【簡單】：兩個詞必須屬於「同一個細分類、用途相似」（如：高鐵 vs 公車、珍珠奶茶 vs 紅茶），但差異明顯；每句線索描述具體直白，讓玩家比較容易聽出誰拿的詞不一樣。'
     },
     normal: {
         label: '普通',
         chances: 2,
-        promptRule: '難度為【普通】：請挑選同類別、常見容易聯想在一起的「兩種不同事物」（例如：鹹酥雞與雞排、滷肉飯與雞肉飯）。線索自然像真人在玩桌遊，帶有一點模糊空間，但仔細比對能發現破綻。'
+        promptRule: '難度為【普通】：兩個詞必須屬於「同一個細分類、功能或外觀高度相似」（如：悠遊卡 vs 信用卡、行李箱 vs 登山包、鹹酥雞 vs 雞排）。線索自然像真人玩桌遊，帶點模糊空間，但仔細比對能發現破綻。'
     },
     hell: {
         label: '地獄',
         chances: 1,
-        promptRule: '難度為【地獄】：請挑選同類別但「實質不同」的兩種事物（例如：蚵仔煎與蝦仁煎、拿鐵與卡布奇諾、地瓜球與白糖粿、臭豆腐與炸杏鮑菇）。困難點要放在「線索寫得隱晦委婉、先講共通點再暗藏細節差異」，絕對不是出同一個東西的不同稱呼！且臥底的第2句線索必須暗藏一個可推理出的實質差異。'
+        promptRule: '難度為【地獄】：兩個詞必須屬於「同一個細分類、極度容易搞混但本質不同」（如：拿鐵 vs 卡布奇諾、蚵仔煎 vs 蝦仁煎、高鐵 vs 自強號、藍牙耳機 vs 有線耳機）。第1輪發言請刻意講兩者的共通點混淆視聽，臥底的第2輪發言才暗藏一個細微但可推理的關鍵差異！'
     }
 };
 
@@ -549,97 +551,113 @@ const OFFLINE_BANK = [
         category: '台灣美食',
         wordA: '珍珠奶茶', cluesA: ['台灣最經典的國民手搖飲料。', '喝的時候一定要用比較粗的吸管。', '裡面有黑色圓圓的配料，嚼起來很Q。', '外國觀光客來台灣幾乎必點。', '熱量不低但下午茶喝一杯超療癒。', '通常可以選加奶精或鮮奶。'],
         wordB: '仙草凍奶茶', cluesB: ['飲料店常見的黑色加料奶茶。', '配料口感滑溜軟嫩，幾乎不用用力咬。', '吃起來帶有一點淡淡的青草香氣。', '夏天喝起來覺得特別順口降火。', '用粗吸管一吸就會整塊滑進嘴裡。', '相比需要一直咀嚼的配料，這個更好吞嚥。'],
+        sharedTrait: '都是手搖飲店常見的黑色加料奶茶。',
         diffPoint: '配料不同：一個是Q彈粉圓，一個是滑嫩草本凍。'
     },
     {
         category: '台灣美食',
         wordA: '麥當勞', cluesA: ['全球知名的連鎖速食店。', '遠遠就能看到大大的黃色M字招牌。', '大家最常點漢堡、薯條配可樂。', '他們的細長薯條剛炸好非常酥脆。', '很多門市半夜還有開得來速。', '以前門口常看到紅頭髮的吉祥物。'],
         wordB: '肯德基', cluesB: ['非常有名的連鎖速食餐廳。', '招牌上有一位戴眼鏡的白鬍子老爺爺。', '主打商品是外酥內嫩的炸雞。', '很多人進去其實是為了買蛋撻。', '紅白相間的炸雞桶非常有代表性。', '除了炸雞之外也有賣紙包雞。'],
-        diffPoint: '不同速食品牌，主打餐點與招牌形象不同。'
+        sharedTrait: '都是台灣常見的跨國美式連鎖速食品牌。',
+        diffPoint: '品牌與主打不同：漢堡薯條為主 vs 炸雞蛋撻為主。'
     },
     {
         category: '台灣美食',
         wordA: '鹹酥雞', cluesA: ['台灣夜市裡少不了的國民宵夜。', '通常是小塊的炸肉，用竹籤叉著吃。', '起鍋時老闆一定會撒上胡椒鹽。', '一定要配九層塔和蒜頭才對味。', '點餐時大家常會順便夾甜不辣或四季豆。', '裝在紙袋裡邊走邊吃超香。'],
         wordB: '雞排', cluesB: ['超受歡迎的台灣油炸小吃。', '份量很大，有時候拿起來比臉還大。', '外皮炸得酥脆，咬下去裡面很多汁。', '買的時候老闆常問要不要切、要不要加辣。', '剛炸好很燙手，整片直接咬最過癮。', '宵夜吃這一片基本上就能當一餐。'],
+        sharedTrait: '都是台灣夜市超人氣的油炸雞肉宵夜。',
         diffPoint: '外觀與吃法不同：小塊竹籤叉著吃 vs 整大片直接啃。'
     },
     {
         category: '台灣美食',
         wordA: '滷肉飯', cluesA: ['台灣巷口小吃店必備的國民美食。', '白飯上淋滿燉到入味的肉燥與醬汁。', '吃起來鹹香下飯，有時帶點膠質黏口感。', '通常一碗銅板價，配顆滷蛋超滿足。', '南北部的稱呼和肥瘦比例不太一樣。', '香味濃郁，是很多人肚子餓的首選。'],
         wordB: '雞肉飯', cluesB: ['台灣非常受歡迎的平價傳統飯食。', '白飯上鋪滿撕成一絲一絲的肉。', '淋上特製油蔥酥和香噴噴的醬汁。', '說到這道料理大家第一個會想到嘉義。', '吃起來相對清爽不油膩，非常順口。', '通常會配上一片黃色的醃蘿蔔。'],
+        sharedTrait: '都是台灣平價小吃店常見的淋醬肉類飯食。',
         diffPoint: '主肉類與醬汁不同：豬肉滷汁 vs 雞肉絲配油蔥。'
     },
     {
         category: '交通旅遊',
         wordA: '高鐵', cluesA: ['台灣西部南北往來的重要交通工具。', '速度非常快，台北到高雄不到兩小時。', '車廂寬敞舒適，有分標準與商務車廂。', '票價在陸上交通工具中算比較貴的。', '很多車站蓋在郊區，常需要轉乘接駁車。', '返鄉或出差趕時間時的首選。'],
         wordB: '台鐵', cluesB: ['台灣歷史最悠久的鐵路系統。', '路線幾乎環繞全台，站點非常密集。', '車種分很多種，有快車也有站站停的區間車。', '除了搭車之外，排骨便當也非常出名。', '票價親民，是許多學生通勤的選擇。', '車站大多位於市中心，下車就能逛街。'],
+        sharedTrait: '都是台灣跨縣市往返的軌道火車系統。',
         diffPoint: '營運系統、速度與路線涵蓋範圍不同。'
     },
     {
         category: '交通旅遊',
         wordA: '機車', cluesA: ['台灣路上數量最多的個人交通工具。', '停紅燈時前面會有一整排專屬停等區。', '體積小好鑽車縫，在市區找車位比較方便。', '騎乘時一定要戴安全帽，不然會被開罰單。', '下雨天騎出門得穿雨衣，稍微有點麻煩。', '需要定期去加油站加油或去換電站換電池。'],
         wordB: '腳踏車', cluesB: ['非常環保又兼具運動效果的兩輪交通工具。', '完全不需要加油，靠雙腳踩踏前進。', '很多城市路邊都有提供共享租借服務。', '速度相對比較慢，適合短距離代步或河濱兜風。', '騎久了大腿會痠，但吹著微風很舒服。', '不需要考駕照就能合法騎上路。'],
+        sharedTrait: '都是台灣常見的個人兩輪代步工具。',
         diffPoint: '動力來源與法規不同：引擎/馬達需駕照 vs 人力踩踏。'
     },
     {
         category: '動物寵物',
         wordA: '貓咪', cluesA: ['現代人非常喜歡飼養的毛小孩。', '個性比較獨立，叫牠也不一定會理你。', '每天花很多時間睡覺和舔毛。', '超喜歡鑽進紙箱或跳到高櫃子上。', '開心放鬆時喉嚨會發出呼嚕呼嚕聲。', '上完廁所會自己撥砂蓋起來。'],
         wordB: '狗狗', cluesB: ['人類最忠實常見的寵物之一。', '非常黏人，看到主人回家會興奮衝過來。', '每天通常需要帶出門散步和上廁所。', '開心時會一直搖尾巴，甚至翻肚子討摸。', '能聽懂坐下、握手等簡單指令。', '不同品種的體型差異非常大。'],
-        diffPoint: '完全不同的動物物種與習性。'
+        sharedTrait: '都是人類家庭最常見的四腳毛小孩寵物。',
+        diffPoint: '物種與習性不同：獨立愛高處 vs 黏人需散步。'
     },
     {
         category: '日常用品',
         wordA: '7-11', cluesA: ['台灣街頭巷尾最常見的超商之一。', '招牌是綠、橘、紅三種顏色組成的。', '店裡的思樂冰和霜淇淋很受歡迎。', '很多人每天早上都會去買它的現煮咖啡。', '除了買東西還能寄包裹、繳費和買車票。', '吉祥物是一隻頭上有彩虹的可愛角色。'],
         wordB: '全家', cluesB: ['台灣隨處可見的24小時便利商店。', '招牌主要是藍色和綠色的配色。', '他們的霜淇淋口味常常推陳出新，網路討論度超高。', '進去門口時會聽到非常經典的登登登音樂。', 'App裡的寄杯和友善食光功能很多人用。', '半夜肚子餓隨時走進去都能買到微波便當。'],
-        diffPoint: '不同的連鎖超商品牌。'
+        sharedTrait: '都是台灣24小時營業的大型連鎖便利商店。',
+        diffPoint: '品牌、招牌配色與主打自有商品不同。'
     },
     {
         category: '日常用品',
         wordA: '牙刷', cluesA: ['每天起床和睡前都會用到的浴室用品。', '頂端有一排細軟的毛用來清潔口腔。', '用久了前端會開花變形，需要定期更換。', '有傳統手動的，也有充電震動的款式。', '住飯店時通常會附贈拋棄式的。', '每次用完都要甩乾直立放好。'],
         wordB: '牙膏', cluesB: ['每天清潔口腔時不可或缺的消耗品。', '裝在軟管裡，每次使用前要擠一點出來。', '大多數是涼涼的薄荷口味，會產生泡泡。', '常標榜有抗敏感、美白或防蛀牙功能。', '快用完時大家常會從尾巴死命往前擠。', '必須搭配另一項工具一起使用才有效。'],
-        diffPoint: '刷牙工具（固體刷具）vs 清潔膏體（消耗品）。'
+        sharedTrait: '都是每天早晚刷牙必備的口腔清潔用品。',
+        diffPoint: '形態不同：固體刷具 vs 軟管清潔膏體。'
     },
     {
         category: '日常用品',
         wordA: '冷氣', cluesA: ['台灣夏天絕對不能沒有的居家救命家電。', '開太久電費會暴增，所以大家很在意變頻省電。', '通常會掛在牆壁高處，用遙控器調整溫度。', '濾網用久了會積灰塵，需要定期拆下來洗。', '睡覺時常會設定定時關閉或舒眠模式。', '一打開整個房間很快就會變得涼爽乾燥。'],
         wordB: '電風扇', cluesB: ['家裡幾乎每個房間都會擺一台的消暑家電。', '相較於大型降溫設備，它非常省電。', '開啟後葉片會高速旋轉吹出自然風。', '通常可以設定左右擺頭和調整強中弱風速。', '用久了網罩上很容易卡一層厚厚的灰塵。', '天氣微熱時吹這個就很夠用了。'],
-        diffPoint: '降溫原理不同：壓縮機製冷降溫 vs 扇葉加速空氣流動。'
+        sharedTrait: '都是夏天居家必備的降溫消暑家電。',
+        diffPoint: '原理不同：壓縮機製冷降溫 vs 扇葉吹風散熱。'
     },
     {
         category: '影劇娛樂',
         wordA: '電影院', cluesA: ['週末約會或跟朋友聚會的熱門室內場所。', '進去後大家都要把手機關靜音。', '現場有超大螢幕和震撼的環繞音響。', '很多人入場前一定會買爆米花和可樂。', '冷氣通常開得很強，坐久了會有點冷。', '燈光暗下來後大家就會安靜看著前方。'],
         wordB: 'KTV', cluesB: ['朋友慶生、聚餐續攤最愛去的室內娛樂場所。', '通常會待在獨立的包廂裡，不會吵到外面。', '裡面有螢幕和麥克風，大家輪流點歌。', '很多人去這裡其實是為了點他們的牛肉麵或水餃。', '常常一待就是三、四個小時，甚至唱通宵。', '氣氛很嗨，有時還會有人一直插播。'],
-        diffPoint: '娛樂形式不同：安靜看片 vs 包廂唱歌互動。'
+        sharedTrait: '都是朋友聚會常去的室內影音娛樂場所。',
+        diffPoint: '形式不同：安靜看大銀幕 vs 包廂輪流唱歌。'
     },
     {
         category: '影劇娛樂',
         wordA: '羽球', cluesA: ['台灣非常受歡迎的室內球拍運動。', '球本身非常輕，尾端插著一圈白色毛。', '因為怕風吹，所以大多在室內體育館打。', '球速極快，殺球時的聲音非常清脆響亮。', '場地中間有一張很高的網子隔開雙方。', '有單打也有雙打，非常考驗跑動與反應。'],
         wordB: '網球', cluesB: ['在室外或大型球場常見的球拍競技運動。', '球是毛茸茸的亮黃色，彈性非常好。', '球拍拍面大且有重量，揮拍需要不錯的臂力。', '比賽時球可以落地彈起來一次再打回去。', '發球時球速可以非常驚人，場地也比較大。', '在歐美和世界各地有著名的四大滿貫賽事。'],
+        sharedTrait: '都是隔網對打的球拍競技運動。',
         diffPoint: '用球材質、場地大小與落地規則完全不同。'
     },
     {
         category: '3C科技',
         wordA: '筆電', cluesA: ['大學生和上班族幾乎人手一台的科技產品。', '可以摺疊收進背包裡，帶去咖啡廳工作。', '本身內建螢幕、鍵盤和觸控板。', '電池有續航力限制，出門常要多帶充電器。', '螢幕尺寸通常介於13到16吋之間。', '做簡報、寫報告或追劇都非常方便。'],
         wordB: '平板', cluesB: ['輕薄好攜帶的觸控螢幕裝置。', '很多人會搭配專屬手寫筆來做筆記或畫畫。', '沒有實體鍵盤時，打長篇文章會比較吃力。', '拿在手上追劇、看漫畫的體驗比手機舒服很多。', '外觀看起來就像一台放大版的智慧型手機。', '開機速度超快，待機時間通常也很長。'],
+        sharedTrait: '都是方便隨身攜帶的大螢幕行動運算裝置。',
         diffPoint: '操作形態不同：摺疊附實體鍵盤 vs 單片觸控螢幕。'
     },
     {
         category: '3C科技',
         wordA: '藍牙耳機', cluesA: ['現代人通勤必備的隨身3C配件。', '沒有討厭的電線纏繞，戴起來非常自由。', '通常會配有一個小巧的專屬充電盒。', '很多新款都有主打主動降噪功能。', '最怕不小心掉進水溝或是弄丟其中一邊。', '需要定期充電，不然聽到一半會沒電。'],
         wordB: '藍牙喇叭', cluesB: ['不用插線就能播放音樂的隨身音響裝置。', '非常適合露營、野餐或在房間裡放歌。', '體積大小不一，有些還能防水防塵。', '聲音可以整個空間共享，不需要塞進耳朵。', '透過手機配對就能直接遙控切換曲目。', '音量開大時低音效果通常會比手機本身好很多。'],
+        sharedTrait: '都是透過無線藍牙配對播放音訊的3C產品。',
         diffPoint: '聆聽方式不同：個人配戴獨享 vs 外放多人共享。'
     },
     {
         category: '校園日常',
         wordA: '期中考', cluesA: ['學期進行到一半時學生最頭痛的大關卡。', '前幾天圖書館和咖啡廳通常會一位難求。', '考完這波之後通常還可以稍微喘口氣。', '範圍通常是開學前半段教過的章節。', '很多同學會在前一晚抱佛腳熬夜背書。', '成績佔比通常很重，考不好後面壓力會很大。'],
         wordB: '期末考', cluesB: ['整個學期最後一道也是最關鍵的測驗。', '考完之後緊接著就是大家最期待的長假。', '除了筆試之外，這段期間常還會伴隨一堆報告。', '決定這門課能不能順利歐趴不被當掉。', '熬過這一週就能徹底解放出去玩。', '有些老師會考整學期的總複習，範圍超大。'],
+        sharedTrait: '都是大學學期中決定成績的重大段考。',
         diffPoint: '時間點不同：學期中段測驗 vs 學期末考完放假。'
     },
     {
         category: '動漫遊戲',
         wordA: '皮卡丘', cluesA: ['全球知名度最高的黃色電氣系虛擬角色。', '臉頰上有兩顆紅紅的圓點，尾巴像閃電。', '叫聲非常可愛，是整部作品的招牌吉祥物。', '最經典的絕招是會放出強烈電流攻擊對手。', '不喜歡待在球裡，總是跟在主角身邊。', '幾乎所有年齡層的人都看過牠的周邊商品。'],
         wordB: '哆啦A夢', cluesB: ['陪伴無數人長大的藍色圓滾滾經典角色。', '肚子上有一個能拿出各種神奇道具的口袋。', '雖然設定上是貓型機器人，但卻沒有耳朵。', '最喜歡吃的點心是紅豆餡的銅鑼燒。', '超級害怕老鼠，看到就會嚇到跳起來。', '總是幫身邊那位愛哭又倒楣的朋友解決麻煩。'],
-        diffPoint: '不同作品的經典動漫角色。'
+        sharedTrait: '都是陪伴無數人長大的日本國民級動漫吉祥物。',
+        diffPoint: '分屬不同作品、外觀與能力設定完全不同。'
     }
 ];
 
@@ -840,7 +858,7 @@ function invalidatePreload() {
     setPreloadBadge('idle');
 }
 
-// 呼叫 Gemini API（加入強制防同義詞規則 + 差異驗證欄位 diff_point）
+// 呼叫 Gemini API（v4 平衡版：同時約束「高度相似」與「本質不同」）
 async function fetchFromGemini(apiKey, preferredModel, themeInput, difficulty, externalSignal = null) {
     const randomThemes = PRESET_THEMES.filter(t => t !== '隨機');
     const actualTheme = (themeInput === '隨機')
@@ -853,24 +871,28 @@ async function fetchFromGemini(apiKey, preferredModel, themeInput, difficulty, e
         ? `請絕對不要重複以下最近玩過的詞彙：${history.slice(0, 20).join('、')}。`
         : '';
 
-    const prompt = `你現在是「誰是臥底」遊戲引擎。
+    const prompt = `你現在是「誰是臥底」桌遊的專業出題引擎。
 主題：「${actualTheme}」
 ${diffRule}
 ${avoidText}
 
-【絕對禁止事項（違反即失敗）】：
-1. 平民詞（civ_word）與臥底詞（spy_word）必須是「實質上完全不同的兩種事物」，在現實中不能互相取代！
-2. 嚴格禁止出同義詞、別稱、異體字、全稱與簡稱（例如絕對禁止：「大腸包小腸 vs 糯米腸包香腸」、「沙茶魷魚羹 vs 沙茶魷魚焿」、「番茄 vs 西紅柿」、「麥當勞 vs 麥當當」）。
-3. 你必須先在 diff_point 欄位用一句話寫出兩者在「實體、食材、成分或用途」上的明確不同處；如果寫不出實質差異，請立刻換一組詞！
+【出題黃金平衡原則（極重要）】：
+1. 兩者必須屬於「同一個細分類」，且外觀、功能或使用情境高度重疊（讓玩家聽第1輪時很容易搞混）。
+2. 同時，兩者必須是「現實中不同的兩種事物」。
+   - ❌ 嚴格禁止「太像／同義詞／異體字／別稱」：如「大腸包小腸 vs 糯米腸包香腸」、「魷魚羹 vs 魷魚焿」、「番茄 vs 西紅柿」。
+   - ❌ 嚴格禁止「太遠／不同功能物品」：如「悠遊卡 vs 行李箱」、「高鐵 vs 護照」、「手機 vs 電視」。
+   - ✅ 完美示範（同細類、相似但本質不同）：「悠遊卡 vs 信用卡」、「行李箱 vs 後背包」、「蚵仔煎 vs 蝦仁煎」、「高鐵 vs 自強號」、「藍牙耳機 vs 有線耳機」。
+3. 請先思考並填寫 shared_trait（兩者的高度共通點）與 diff_point（兩者的實質差異），確認兩者「既很像、又真的不同」再寫線索！
 
-請用台灣繁體中文輸出：
+請用台灣繁體中文輸出純JSON：
 - civ_word：平民詞
 - spy_word：臥底詞
-- diff_point：兩者在實質上的關鍵差異（15~25字）
-- civ_clues：6句完全不重複的平民描述（每句15~28字，口氣自然，不可包含詞彙本身的字）
-- spy_clues：2句完全不重複的臥底描述（每句15~28字，口氣自然，不可包含詞彙本身的字，且第2句需能對應到與平民詞的實質差異）
+- shared_trait：兩者高度相似的共通點（12~22字）
+- diff_point：兩者在實體、食材或功能上的關鍵差異（12~25字）
+- civ_clues：6句不重複的平民線索（每句15~28字，口氣自然，不可包含詞彙本身的字）
+- spy_clues：2句不重複的臥底線索（每句15~28字，口氣自然，不可包含詞彙本身的字；第1句可偏共通點，第2句需暗藏可推理的實質差異）
 
-請直接輸出純JSON：{"civ_word":"","spy_word":"","diff_point":"","civ_clues":["","","","","",""],"spy_clues":["",""]}`;
+格式：{"civ_word":"","spy_word":"","shared_trait":"","diff_point":"","civ_clues":["","","","","",""],"spy_clues":["",""]}`;
 
     const modelOrder = [preferredModel, 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
         .filter((v, i, a) => a.indexOf(v) === i);
@@ -895,7 +917,7 @@ ${avoidText}
                 signal: controller.signal,
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { responseMimeType: 'application/json', temperature: 0.95, maxOutputTokens: 900 }
+                    generationConfig: { responseMimeType: 'application/json', temperature: 0.9, maxOutputTokens: 950 }
                 })
             });
             clearTimeout(timer);
@@ -979,7 +1001,7 @@ async function startNewGame() {
     const diff = DIFF_CONFIG[selectedDifficulty] || DIFF_CONFIG.normal;
     const currentKey = getConfigKey();
 
-    let civWord, spyWord, diffPoint = '', civClues, spyClues, modeText = '內建題庫';
+    let civWord, spyWord, sharedTrait = '', diffPoint = '', civClues, spyClues, modeText = '內建題庫';
     let notice = '';
 
     if (s.mode === 'ai' && s.apiKey) {
@@ -989,9 +1011,10 @@ async function startNewGame() {
             setPreloadBadge('idle');
             civWord = res.data.civ_word;
             spyWord = res.data.spy_word;
+            sharedTrait = res.data.shared_trait || '';
             diffPoint = res.data.diff_point || '';
             civClues = shuffle(res.data.civ_clues);
-            spyClues = res.data.spy_clues; // 保留順序讓第2句有較明確破綻
+            spyClues = res.data.spy_clues;
             modeText = `AI 出題（${res.theme}）`;
         } else {
             document.getElementById('loading-overlay').classList.add('show');
@@ -1009,6 +1032,7 @@ async function startNewGame() {
                 }
                 civWord = res.data.civ_word;
                 spyWord = res.data.spy_word;
+                sharedTrait = res.data.shared_trait || '';
                 diffPoint = res.data.diff_point || '';
                 civClues = shuffle(res.data.civ_clues);
                 spyClues = res.data.spy_clues;
@@ -1040,6 +1064,7 @@ async function startNewGame() {
         const swap = Math.random() < 0.5;
         civWord = swap ? pair.wordB : pair.wordA;
         spyWord = swap ? pair.wordA : pair.wordB;
+        sharedTrait = pair.sharedTrait || '';
         diffPoint = pair.diffPoint || '';
         civClues = shuffle(swap ? pair.cluesB : pair.cluesA);
         spyClues = shuffle(swap ? pair.cluesA : pair.cluesB);
@@ -1069,6 +1094,7 @@ async function startNewGame() {
         spyId,
         civWord,
         spyWord,
+        sharedTrait,
         diffPoint,
         hintWords: shuffle([civWord, spyWord]),
         round: 1,
@@ -1147,8 +1173,14 @@ function render() {
     const ansBox = document.getElementById('answer-reveal');
     if (game.status !== 'playing') {
         ansBox.style.display = 'flex';
-        const diffHtml = game.diffPoint ? `<div class="answer-diff">🔍 關鍵差異：${game.diffPoint}</div>` : '';
-        ansBox.innerHTML = `<div class="answer-words"><div>👤 平民：<strong style="color:var(--accent)">${game.civWord}</strong></div><div>🕵️ 臥底：<strong style="color:var(--danger)">${game.spyWord}</strong></div></div>${diffHtml}`;
+        let metaHtml = '';
+        if (game.sharedTrait || game.diffPoint) {
+            metaHtml = `<div class="answer-meta">`
+                + (game.sharedTrait ? `<div>🔗 共通點：${game.sharedTrait}</div>` : '')
+                + (game.diffPoint ? `<div>🔍 關鍵差異：${game.diffPoint}</div>` : '')
+                + `</div>`;
+        }
+        ansBox.innerHTML = `<div class="answer-words"><div>👤 平民：<strong style="color:var(--accent)">${game.civWord}</strong></div><div>🕵️ 臥底：<strong style="color:var(--danger)">${game.spyWord}</strong></div></div>${metaHtml}`;
     } else {
         ansBox.style.display = 'none';
     }
