@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>誰是臥底：AI 偵探版 v2</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-soft: #162033;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 14px 14px 44px;
+        }
+        .app {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .title-group h1 {
+            font-size: 1.3rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .subtitle-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+        .subtitle-row p {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .preload-badge {
+            font-size: 0.7rem;
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-weight: bold;
+            display: none;
+        }
+        .preload-badge.loading {
+            display: inline-block;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+        }
+        .preload-badge.ready {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+        .icon-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        /* 主題與難度設定面板 */
+        .setup-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .setup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .setup-summary {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .mini-badge {
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: #0f172a;
+            color: var(--accent);
+            border: 1px solid var(--border);
+        }
+        .mini-badge.diff-easy { color: #86efac; border-color: rgba(34,197,94,0.4); }
+        .mini-badge.diff-normal { color: #fde68a; border-color: rgba(245,158,11,0.4); }
+        .mini-badge.diff-hell { color: #fca5a5; border-color: rgba(239,68,68,0.4); }
+        .toggle-arrow {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .setup-body {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .setup-body.collapsed {
+            display: none;
+        }
+        .section-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        .chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .chip {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: #cbd5e1;
+            border-radius: 999px;
+            padding: 5px 11px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .chip.active {
+            background: var(--accent);
+            color: #0f172a;
+            border-color: var(--accent);
+            font-weight: bold;
+        }
+        .custom-theme-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .custom-theme-row input {
+            flex: 1;
+            padding: 9px 11px;
+            border-radius: 9px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: var(--text);
+            font-size: 0.88rem;
+        }
+        .custom-theme-row input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .diff-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .diff-btn {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: #cbd5e1;
+            border-radius: 10px;
+            padding: 8px 4px;
+            font-size: 0.84rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        .diff-btn small {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: normal;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+        .diff-btn.active.easy { border-color: var(--success); background: rgba(34,197,94,0.16); color: #86efac; }
+        .diff-btn.active.normal { border-color: var(--warning); background: rgba(245,158,11,0.16); color: #fde68a; }
+        .diff-btn.active.hell { border-color: var(--danger); background: rgba(239,68,68,0.16); color: #fca5a5; }
+
+        /* 狀態列 */
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .stat-pill {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: bold;
+        }
+        .stat-pill span {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--muted);
+            font-weight: normal;
+        }
+        .message-box {
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            background: var(--card);
+            border-left: 4px solid var(--accent);
+        }
+        .message-box.won { background: rgba(34, 197, 94, 0.15); border-left-color: var(--success); color: #86efac; }
+        .message-box.lost { background: rgba(239, 68, 68, 0.15); border-left-color: var(--danger); color: #fca5a5; }
+        .hint-box {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--warning);
+            color: #fde68a;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.88rem;
+            margin-bottom: 12px;
+        }
+        .answer-reveal {
+            background: var(--card);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.92rem;
+        }
+        .players {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .player-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+        .player-card.eliminated { opacity: 0.5; }
+        .player-card.spy-reveal { border: 2px solid var(--danger); background: rgba(239, 68, 68, 0.08); }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .player-name {
+            font-size: 1.06rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tag { font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; font-weight: bold; }
+        .tag-civ { background: #334155; color: #cbd5e1; }
+        .tag-spy { background: var(--danger); color: white; }
+        .clue-item {
+            background: #0f172a;
+            padding: 9px 11px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.92rem;
+        }
+        .clue-round {
+            color: var(--accent);
+            font-size: 0.72rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .btn {
+            width: 100%;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 0.94rem;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-accuse { background: var(--danger); color: white; margin-top: 4px; }
+        .btn-primary { background: var(--accent); color: #0f172a; }
+        .btn-warning { background: var(--warning); color: #0f172a; }
+        .btn-secondary { background: #475569; color: white; }
+        .btn-sm { padding: 9px 12px; font-size: 0.86rem; }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .controls-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* 讀取遮罩 & 設定彈窗 */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .overlay.show { display: flex; }
+        .modal {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 420px;
+        }
+        .modal h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--accent); }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.84rem; color: var(--muted); margin-bottom: 6px; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+        .history-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 0.82rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid #334155;
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <header>
+        <div class="title-group">
+            <h1>🕵️ 誰是臥底：偵探版</h1>
+            <div class="subtitle-row">
+                <p id="mode-label">目前模式：內建題庫</p>
+                <span id="preload-badge" class="preload-badge"></span>
+            </div>
+        </div>
+        <button class="icon-btn" onclick="openSettings()">⚙️ 設定</button>
+    </header>
+
+    <!-- 主題與難度選擇器 -->
+    <div class="setup-card">
+        <div class="setup-header" onclick="toggleSetupPanel()">
+            <div class="setup-summary">
+                🎯
+                <span id="summary-theme" class="mini-badge">主題：隨機</span>
+                <span id="summary-diff" class="mini-badge diff-normal">難度：普通</span>
+            </div>
+            <span id="setup-arrow" class="toggle-arrow">展開調整 ▼</span>
+        </div>
+        <div id="setup-body" class="setup-body collapsed">
+            <div class="section-label">1. 選擇主題（或直接輸入自訂主題）</div>
+            <div id="theme-chips" class="chip-list"></div>
+            <div class="custom-theme-row">
+                <input type="text" id="custom-theme-input" placeholder="自訂主題（如：名偵探柯南、手遊、夜市）" oninput="onCustomThemeInput()">
+            </div>
+
+            <div class="section-label">2. 選擇推理難度</div>
+            <div class="diff-group">
+                <button class="diff-btn easy" data-diff="easy" onclick="selectDifficulty('easy')">
+                    🟢 簡單<small>線索直白・2次機會</small>
+                </button>
+                <button class="diff-btn normal" data-diff="normal" onclick="selectDifficulty('normal')">
+                    🟡 普通<small>經典平衡・2次機會</small>
+                </button>
+                <button class="diff-btn hell" data-diff="hell" onclick="selectDifficulty('hell')">
+                    🔴 地獄<small>極致混淆・1次機會</small>
+                </button>
+            </div>
+
+            <button class="btn btn-primary btn-sm" onclick="applySetupAndRestart()">🚀 套用並開始新局</button>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="stat-pill"><span>發言進度</span><div id="stat-round">第 1 / 2 輪</div></div>
+        <div class="stat-pill"><span>剩餘機會</span><div id="stat-chances">❤️ 2 次</div></div>
+        <div class="stat-pill"><span>目前連勝</span><div id="stat-streak">🔥 0 連勝</div></div>
+    </div>
+
+    <div id="message-box" class="message-box">載入中...</div>
+    <div id="hint-box" class="hint-box" style="display:none;"></div>
+    <div id="answer-reveal" class="answer-reveal" style="display:none;"></div>
+
+    <div id="players-container" class="players"></div>
+
+    <div id="controls" class="controls"></div>
+</div>
+
+<!-- 讀取中遮罩 -->
+<div id="loading-overlay" class="overlay">
+    <div style="text-align:center;">
+        <div class="spinner"></div>
+        <div style="font-weight:bold; color:var(--accent);">🕵️ AI 正在派發題目中...</div>
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;">若超過 12 秒將自動切換內建題庫</div>
+    </div>
+</div>
+
+<!-- 設定彈窗 -->
+<div id="settings-overlay" class="overlay">
+    <div class="modal">
+        <h2>⚙️ 遊戲與 AI 設定</h2>
+        <div class="form-group">
+            <label>出題模式</label>
+            <select id="setting-mode">
+                <option value="offline">內建題庫（免等待、離線可玩）</option>
+                <option value="ai">Gemini AI 即時出題（需填 API Key）</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Gemini API Key（僅儲存在你的手機瀏覽器）</label>
+            <input type="password" id="setting-apikey" placeholder="貼上你的 API Key">
+        </div>
+        <div class="form-group">
+            <label>AI 模型選擇</label>
+            <select id="setting-model">
+                <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite（最快）</option>
+                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+                <option value="gemini-3.8-flash">gemini-3.8-flash</option>
+                <option value="gemini-4-hydrogen">gemini-4-hydrogen</option>
+            </select>
+        </div>
+        <div class="history-row">
+            <span id="history-count-text">防重複黑名單：已記錄 0 組詞彙</span>
+            <button class="link-btn" onclick="clearHistory()">清除紀錄</button>
+        </div>
+        <div class="controls-row">
+            <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+            <button class="btn btn-primary" onclick="saveSettings()">儲存並開新局</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BOTS = [
+    { id: 0, name: '小宇', avatar: '🦊' },
+    { id: 1, name: '阿豪', avatar: '🐻' },
+    { id: 2, name: '曉彤', avatar: '🐰' },
+    { id: 3, name: '凱文', avatar: '🦉' }
+];
+
+const PRESET_THEMES = [
+    '隨機', '台灣美食', '日常用品', '動漫遊戲', '校園日常', '3C科技', '交通旅遊', '影劇娛樂', '動物寵物'
+];
+
+const DIFF_CONFIG = {
+    easy: {
+        label: '簡單',
+        chances: 2,
+        promptRule: '難度為【簡單】：請挑選關聯性適中、差異較明顯的一組詞彙。每句線索描述具體直白，讓玩家比較容易聽出誰拿的詞不一樣。'
+    },
+    normal: {
+        label: '普通',
+        chances: 2,
+        promptRule: '難度為【普通】：請挑選高度相似但不同的詞彙。線索自然像真人在玩桌遊，帶有一點模糊空間，但仔細比對能發現破綻。'
+    },
+    hell: {
+        label: '地獄',
+        chances: 1,
+        promptRule: '難度為【地獄】：請挑選極度相似、極易混淆的詞彙（例如：拿鐵與卡布奇諾、高麗菜與大白菜、牙線與牙間刷）。線索請刻意含糊、多描述兩者的共同特徵，只在極細微的細節中暗藏差異！'
+    }
+};
+
+// 內建 16 組分類題庫
+const OFFLINE_BANK = [
+    {
+        category: '台灣美食',
+        wordA: '珍珠奶茶', cluesA: ['台灣最經典的國民手搖飲料。', '喝的時候一定要用比較粗的吸管。', '裡面有黑色圓圓的配料，嚼起來很Q。', '外國觀光客來台灣幾乎必點。', '熱量不低但下午茶喝一杯超療癒。', '通常可以選加奶精或鮮奶。'],
+        wordB: '仙草凍奶茶', cluesB: ['飲料店常見的黑色加料奶茶。', '配料口感滑溜軟嫩，幾乎不用用力咬。', '吃起來帶有一點淡淡的青草香氣。', '夏天喝起來覺得特別順口降火。', '用粗吸管一吸就會整塊滑進嘴裡。', '相比需要一直咀嚼的配料，這個更好吞嚥。']
+    },
+    {
+        category: '台灣美食',
+        wordA: '麥當勞', cluesA: ['全球知名的連鎖速食店。', '遠遠就能看到大大的黃色M字招牌。', '大家最常點漢堡、薯條配可樂。', '他們的細長薯條剛炸好非常酥脆。', '很多門市半夜還有開得來速。', '以前門口常看到紅頭髮的吉祥物。'],
+        wordB: '肯德基', cluesB: ['非常有名的連鎖速食餐廳。', '招牌上有一位戴眼鏡的白鬍子老爺爺。', '主打商品是外酥內嫩的炸雞。', '很多人進去其實是為了買蛋撻。', '紅白相間的炸雞桶非常有代表性。', '除了炸雞之外也有賣紙包雞。']
+    },
+    {
+        category: '台灣美食',
+        wordA: '鹹酥雞', cluesA: ['台灣夜市裡少不了的國民宵夜。', '通常是小塊的炸肉，用竹籤叉著吃。', '起鍋時老闆一定會撒上胡椒鹽。', '一定要配九層塔和蒜頭才對味。', '點餐時大家常會順便夾甜不辣或四季豆。', '裝在紙袋裡邊走邊吃超香。'],
+        wordB: '雞排', cluesB: ['超受歡迎的台灣油炸小吃。', '份量很大，有時候拿起來比臉還大。', '外皮炸得酥脆，咬下去裡面很多汁。', '買的時候老闆常問要不要切、要不要加辣。', '剛炸好很燙手，整片直接咬最過癮。', '宵夜吃這一片基本上就能當一餐。']
+    },
+    {
+        category: '台灣美食',
+        wordA: '滷肉飯', cluesA: ['台灣巷口小吃店必備的國民美食。', '白飯上淋滿燉到入味的肉燥與醬汁。', '吃起來鹹香下飯，有時帶點膠質黏口感。', '通常一碗銅板價，配顆滷蛋超滿足。', '南北部的稱呼和肥瘦比例不太一樣。', '香味濃郁，是很多人肚子餓的首選。'],
+        wordB: '雞肉飯', cluesB: ['台灣非常受歡迎的平價傳統飯食。', '白飯上鋪滿撕成一絲一絲的肉。', '淋上特製油蔥酥和香噴噴的醬汁。', '說到這道料理大家第一個會想到嘉義。', '吃起來相對清爽不油膩，非常順口。', '通常會配上一片黃色的醃蘿蔔。']
+    },
+    {
+        category: '交通旅遊',
+        wordA: '高鐵', cluesA: ['台灣西部南北往來的重要交通工具。', '速度非常快，台北到高雄不到兩小時。', '車廂寬敞舒適，有分標準與商務車廂。', '票價在陸上交通工具中算比較貴的。', '很多車站蓋在郊區，常需要轉乘接駁車。', '返鄉或出差趕時間時的首選。'],
+        wordB: '台鐵', cluesB: ['台灣歷史最悠久的鐵路系統。', '路線幾乎環繞全台，站點非常密集。', '車種分很多種，有快車也有站站停的區間車。', '除了搭車之外，排骨便當也非常出名。', '票價親民，是許多學生通勤的選擇。', '車站大多位於市中心，下車就能逛街。']
+    },
+    {
+        category: '交通旅遊',
+        wordA: '機車', cluesA: ['台灣路上數量最多的個人交通工具。', '停紅燈時前面會有一整排專屬停等區。', '體積小好鑽車縫，在市區找車位比較方便。', '騎乘時一定要戴安全帽，不然會被開罰單。', '下雨天騎出門得穿雨衣，稍微有點麻煩。', '需要定期去加油站加油或去換電站換電池。'],
+        wordB: '腳踏車', cluesB: ['非常環保又兼具運動效果的兩輪交通工具。', '完全不需要加油，靠雙腳踩踏前進。', '很多城市路邊都有提供共享租借服務。', '速度相對比較慢，適合短距離代步或河濱兜風。', '騎久了大腿會痠，但吹著微風很舒服。', '不需要考駕照就能合法騎上路。']
+    },
+    {
+        category: '動物寵物',
+        wordA: '貓咪', cluesA: ['現代人非常喜歡飼養的毛小孩。', '個性比較獨立，叫牠也不一定會理你。', '每天花很多時間睡覺和舔毛。', '超喜歡鑽進紙箱或跳到高櫃子上。', '開心放鬆時喉嚨會發出呼嚕呼嚕聲。', '上完廁所會自己撥砂蓋起來。'],
+        wordB: '狗狗', cluesB: ['人類最忠實常見的寵物之一。', '非常黏人，看到主人回家會興奮衝過來。', '每天通常需要帶出門散步和上廁所。', '開心時會一直搖尾巴，甚至翻肚子討摸。', '能聽懂坐下、握手等簡單指令。', '不同品種的體型差異非常大。']
+    },
+    {
+        category: '日常用品',
+        wordA: '7-11', cluesA: ['台灣街頭巷尾最常見的超商之一。', '招牌是綠、橘、紅三種顏色組成的。', '店裡的思樂冰和霜淇淋很受歡迎。', '很多人每天早上都會去買它的現煮咖啡。', '除了買東西還能寄包裹、繳費和買車票。', '吉祥物是一隻頭上有彩虹的可愛角色。'],
+        wordB: '全家', cluesB: ['台灣隨處可見的24小時便利商店。', '招牌主要是藍色和綠色的配色。', '他們的霜淇淋口味常常推陳出新，網路討論度超高。', '進去門口時會聽到非常經典的登登登音樂。', 'App裡的寄杯和友善食光功能很多人用。', '半夜肚子餓隨時走進去都能買到微波便當。']
+    },
+    {
+        category: '日常用品',
+        wordA: '牙刷', cluesA: ['每天起床和睡前都會用到的浴室用品。', '頂端有一排細軟的毛用來清潔口腔。', '用久了前端會開花變形，需要定期更換。', '有傳統手動的，也有充電震動的款式。', '住飯店時通常會附贈拋棄式的。', '每次用完都要甩乾直立放好。'],
+        wordB: '牙膏', cluesB: ['每天清潔口腔時不可或缺的消耗品。', '裝在軟管裡，每次使用前要擠一點出來。', '大多數是涼涼的薄荷口味，會產生泡泡。', '常標榜有抗敏感、美白或防蛀牙功能。', '快用完時大家常會從尾巴死命往前擠。', '必須搭配另一項工具一起使用才有效。']
+    },
+    {
+        category: '日常用品',
+        wordA: '冷氣', cluesA: ['台灣夏天絕對不能沒有的居家救命家電。', '開太久電費會暴增，所以大家很在意變頻省電。', '通常會掛在牆壁高處，用遙控器調整溫度。', '濾網用久了會積灰塵，需要定期拆下來洗。', '睡覺時常會設定定時關閉或舒眠模式。', '一打開整個房間很快就會變得涼爽乾燥。'],
+        wordB: '電風扇', cluesB: ['家裡幾乎每個房間都會擺一台的消暑家電。', '相較於大型降溫設備，它非常省電。', '開啟後葉片會高速旋轉吹出自然風。', '通常可以設定左右擺頭和調整強中弱風速。', '用久了網罩上很容易卡一層厚厚的灰塵。', '天氣微熱時吹這個就很夠用了。']
+    },
+    {
+        category: '影劇娛樂',
+        wordA: '電影院', cluesA: ['週末約會或跟朋友聚會的熱門室內場所。', '進去後大家都要把手機關靜音。', '現場有超大螢幕和震撼的環繞音響。', '很多人入場前一定會買爆米花和可樂。', '冷氣通常開得很強，坐久了會有點冷。', '燈光暗下來後大家就會安靜看著前方。'],
+        wordB: 'KTV', cluesB: ['朋友慶生、聚餐續攤最愛去的室內娛樂場所。', '通常會待在獨立的包廂裡，不會吵到外面。', '裡面有螢幕和麥克風，大家輪流點歌。', '很多人去這裡其實是為了點他們的牛肉麵或水餃。', '常常一待就是三、四個小時，甚至唱通宵。', '氣氛很嗨，有時還會有人一直插播。']
+    },
+    {
+        category: '影劇娛樂',
+        wordA: '羽球', cluesA: ['台灣非常受歡迎的室內球拍運動。', '球本身非常輕，尾端插著一圈白色毛。', '因為怕風吹，所以大多在室內體育館打。', '球速極快，殺球時的聲音非常清脆響亮。', '場地中間有一張很高的網子隔開雙方。', '有單打也有雙打，非常考驗跑動與反應。'],
+        wordB: '網球', cluesB: ['在室外或大型球場常見的球拍競技運動。', '球是毛茸茸的亮黃色，彈性非常好。', '球拍拍面大且有重量，揮拍需要不錯的臂力。', '比賽時球可以落地彈起來一次再打回去。', '發球時球速可以非常驚人，場地也比較大。', '在歐美和世界各地有著名的四大滿貫賽事。']
+    },
+    {
+        category: '3C科技',
+        wordA: '筆電', cluesA: ['大學生和上班族幾乎人手一台的科技產品。', '可以摺疊收進背包裡，帶去咖啡廳工作。', '本身內建螢幕、鍵盤和觸控板。', '電池有續航力限制，出門常要多帶充電器。', '螢幕尺寸通常介於13到16吋之間。', '做簡報、寫報告或追劇都非常方便。'],
+        wordB: '平板', cluesB: ['輕薄好攜帶的觸控螢幕裝置。', '很多人會搭配專屬手寫筆來做筆記或畫畫。', '沒有實體鍵盤時，打長篇文章會比較吃力。', '拿在手上追劇、看漫畫的體驗比手機舒服很多。', '外觀看起來就像一台放大版的智慧型手機。', '開機速度超快，待機時間通常也很長。']
+    },
+    {
+        category: '3C科技',
+        wordA: '藍牙耳機', cluesA: ['現代人通勤必備的隨身3C配件。', '沒有討厭的電線纏繞，戴起來非常自由。', '通常會配有一個小巧的專屬充電盒。', '很多新款都有主打主動降噪功能。', '最怕不小心掉進水溝或是弄丟其中一邊。', '需要定期充電，不然聽到一半會沒電。'],
+        wordB: '藍牙喇叭', cluesB: ['不用插線就能播放音樂的隨身音響裝置。', '非常適合露營、野餐或在房間裡放歌。', '體積大小不一，有些還能防水防塵。', '聲音可以整個空間共享，不需要塞進耳朵。', '透過手機配對就能直接遙控切換曲目。', '音量開大時低音效果通常會比手機本身好很多。']
+    },
+    {
+        category: '校園日常',
+        wordA: '期中考', cluesA: ['學期進行到一半時學生最頭痛的大關卡。', '前幾天圖書館和咖啡廳通常會一位難求。', '考完這波之後通常還可以稍微喘口氣。', '範圍通常是開學前半段教過的章節。', '很多同學會在前一晚抱佛腳熬夜背書。', '成績佔比通常很重，考不好後面壓力會很大。'],
+        wordB: '期末考', cluesB: ['整個學期最後一道也是最關鍵的測驗。', '考完之後緊接著就是大家最期待的長假。', '除了筆試之外，這段期間常還會伴隨一堆報告。', '決定這門課能不能順利歐趴不被當掉。', '熬過這一週就能徹底解放出去玩。', '有些老師會考整學期的總複習，範圍超大。']
+    },
+    {
+        category: '動漫遊戲',
+        wordA: '皮卡丘', cluesA: ['全球知名度最高的黃色電氣系虛擬角色。', '臉頰上有兩顆紅紅的圓點，尾巴像閃電。', '叫聲非常可愛，是整部作品的招牌吉祥物。', '最經典的絕招是會放出強烈電流攻擊對手。', '不喜歡待在球裡，總是跟在主角身邊。', '幾乎所有年齡層的人都看過牠的周邊商品。'],
+        wordB: '哆啦A夢', cluesB: ['陪伴無數人長大的藍色圓滾滾經典角色。', '肚子上有一個能拿出各種神奇道具的口袋。', '雖然設定上是貓型機器人，但卻沒有耳朵。', '最喜歡吃的點心是紅豆餡的銅鑼燒。', '超級害怕老鼠，看到就會嚇到跳起來。', '總是幫身邊那位愛哭又倒楣的朋友解決麻煩。']
+    }
+];
+
+let game = null;
+let streak = parseInt(localStorage.getItem('undercover_streak') || '0', 10);
+let lastOfflineIdx = -1;
+
+// 使用者目前選擇的主題與難度
+let selectedPresetTheme = localStorage.getItem('undercover_preset_theme') || '隨機';
+let customThemeText = localStorage.getItem('undercover_custom_theme') || '';
+let selectedDifficulty = localStorage.getItem('undercover_difficulty') || 'normal';
+
+// 背景預載狀態
+let preloadedData = null;        // { key, data, theme, model }
+let preloadPromise = null;       // 進行中的 Promise
+let preloadPromiseKey = null;    // 該 Promise 對應的設定 key
+let preloadController = null;    // AbortController
+
+function getActiveTheme() {
+    const custom = customThemeText.trim();
+    return custom || selectedPresetTheme || '隨機';
+}
+
+function getSettings() {
+    return {
+        mode: localStorage.getItem('undercover_mode') || 'offline',
+        apiKey: localStorage.getItem('undercover_apikey') || '',
+        model: localStorage.getItem('undercover_model') || 'gemini-3.5-flash-lite'
+    };
+}
+
+function getConfigKey() {
+    const s = getSettings();
+    return `${s.mode}|${s.model}|${getActiveTheme()}|${selectedDifficulty}`;
+}
+
+// 歷史黑名單（防重複）
+function getHistory() {
+    try {
+        return JSON.parse(localStorage.getItem('undercover_history') || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function addToHistory(wordA, wordB) {
+    const list = getHistory();
+    const pairStr = `${wordA}/${wordB}`;
+    if (!list.includes(pairStr)) {
+        list.unshift(pairStr);
+        if (list.length > 25) list.length = 25;
+        localStorage.setItem('undercover_history', JSON.stringify(list));
+    }
+}
+
+function clearHistory() {
+    localStorage.removeItem('undercover_history');
+    updateHistoryCountUI();
+}
+
+function updateHistoryCountUI() {
+    const el = document.getElementById('history-count-text');
+    if (el) el.textContent = `防重複黑名單：已記錄 ${getHistory().length} 組詞彙`;
+}
+
+// 主題與難度 UI 初始化
+function initSetupUI() {
+    const chipsContainer = document.getElementById('theme-chips');
+    chipsContainer.innerHTML = PRESET_THEMES.map(t => {
+        const isActive = !customThemeText.trim() && selectedPresetTheme === t;
+        return `<button class="chip ${isActive ? 'active' : ''}" onclick="selectPresetTheme('${t}')">${t}</button>`;
+    }).join('');
+
+    document.getElementById('custom-theme-input').value = customThemeText;
+    updateDifficultyUI();
+    updateSummaryBadges();
+}
+
+function toggleSetupPanel() {
+    const body = document.getElementById('setup-body');
+    const arrow = document.getElementById('setup-arrow');
+    const isCollapsed = body.classList.toggle('collapsed');
+    arrow.textContent = isCollapsed ? '展開調整 ▼' : '收合 ▲';
+}
+
+function selectPresetTheme(theme) {
+    selectedPresetTheme = theme;
+    customThemeText = '';
+    document.getElementById('custom-theme-input').value = '';
+    localStorage.setItem('undercover_preset_theme', theme);
+    localStorage.setItem('undercover_custom_theme', '');
+    initSetupUI();
+    invalidatePreload();
+}
+
+function onCustomThemeInput() {
+    customThemeText = document.getElementById('custom-theme-input').value;
+    localStorage.setItem('undercover_custom_theme', customThemeText);
+    const chips = document.querySelectorAll('#theme-chips .chip');
+    chips.forEach(c => {
+        if (customThemeText.trim()) {
+            c.classList.remove('active');
+        } else {
+            c.classList.toggle('active', c.textContent === selectedPresetTheme);
+        }
+    });
+    updateSummaryBadges();
+    invalidatePreload();
+}
+
+function selectDifficulty(diff) {
+    selectedDifficulty = diff;
+    localStorage.setItem('undercover_difficulty', diff);
+    updateDifficultyUI();
+    updateSummaryBadges();
+    invalidatePreload();
+}
+
+function updateDifficultyUI() {
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.diff === selectedDifficulty);
+    });
+}
+
+function updateSummaryBadges() {
+    const theme = getActiveTheme();
+    const diff = DIFF_CONFIG[selectedDifficulty] || DIFF_CONFIG.normal;
+    document.getElementById('summary-theme').textContent = `主題：${theme}`;
+    const diffEl = document.getElementById('summary-diff');
+    diffEl.textContent = `難度：${diff.label}`;
+    diffEl.className = `mini-badge diff-${selectedDifficulty}`;
+}
+
+function applySetupAndRestart() {
+    document.getElementById('setup-body').classList.add('collapsed');
+    document.getElementById('setup-arrow').textContent = '展開調整 ▼';
+    startNewGame();
+}
+
+// 設定彈窗
+function openSettings() {
+    const s = getSettings();
+    document.getElementById('setting-mode').value = s.mode;
+    document.getElementById('setting-apikey').value = s.apiKey;
+    document.getElementById('setting-model').value = s.model;
+    updateHistoryCountUI();
+    document.getElementById('settings-overlay').classList.add('show');
+}
+
+function closeSettings() {
+    document.getElementById('settings-overlay').classList.remove('show');
+}
+
+function saveSettings() {
+    const mode = document.getElementById('setting-mode').value;
+    const apiKey = document.getElementById('setting-apikey').value.trim();
+    const model = document.getElementById('setting-model').value;
+    localStorage.setItem('undercover_mode', mode);
+    localStorage.setItem('undercover_apikey', apiKey);
+    localStorage.setItem('undercover_model', model);
+    invalidatePreload();
+    closeSettings();
+    startNewGame();
+}
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// 預載狀態 UI
+function setPreloadBadge(state) {
+    const el = document.getElementById('preload-badge');
+    if (state === 'loading') {
+        el.className = 'preload-badge loading';
+        el.textContent = '⏳ 預載下一題中...';
+    } else if (state === 'ready') {
+        el.className = 'preload-badge ready';
+        el.textContent = '⚡ 下一題已就緒';
+    } else {
+        el.className = 'preload-badge';
+        el.textContent = '';
+    }
+}
+
+function invalidatePreload() {
+    preloadedData = null;
+    preloadPromise = null;
+    preloadPromiseKey = null;
+    if (preloadController) {
+        preloadController.abort();
+        preloadController = null;
+    }
+    setPreloadBadge('idle');
+}
+
+// 呼叫 Gemini API（支援多模型備援與防重複黑名單）
+async function fetchFromGemini(apiKey, preferredModel, themeInput, difficulty, externalSignal = null) {
+    const randomThemes = PRESET_THEMES.filter(t => t !== '隨機');
+    const actualTheme = (themeInput === '隨機')
+        ? randomThemes[Math.floor(Math.random() * randomThemes.length)]
+        : themeInput;
+
+    const diffRule = (DIFF_CONFIG[difficulty] || DIFF_CONFIG.normal).promptRule;
+    const history = getHistory();
+    const avoidText = history.length > 0
+        ? `請絕對不要重複以下最近玩過的詞彙：${history.slice(0, 20).join('、')}。`
+        : '';
+
+    const prompt = `你現在是「誰是臥底」遊戲引擎。
+主題：「${actualTheme}」
+${diffRule}
+${avoidText}
+請用台灣繁體中文出一組詞彙（civ_word 平民詞、spy_word 臥底詞），為平民詞寫6句完全不重複的線索（civ_clues），為臥底詞寫2句完全不重複的線索（spy_clues）。
+規則：每句15~28字，口氣自然，絕對不可直接說出詞彙本身或包含詞彙裡的字。
+請直接輸出純JSON：{"civ_word":"","spy_word":"","civ_clues":["","","","","",""],"spy_clues":["",""]}`;
+
+    // 主模型失敗（503）時自動嘗試備援輕量模型
+    const modelOrder = [preferredModel, 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
+        .filter((v, i, a) => a.indexOf(v) === i);
+
+    let lastErr = null;
+    for (const model of modelOrder) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12000);
+        const onExternalAbort = () => controller.abort();
+        if (externalSignal) {
+            if (externalSignal.aborted) {
+                clearTimeout(timer);
+                throw new DOMException('Aborted', 'AbortError');
+            }
+            externalSignal.addEventListener('abort', onExternalAbort, { once: true });
+        }
+
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: 'application/json', temperature: 1.05, maxOutputTokens: 800 }
+                })
+            });
+            clearTimeout(timer);
+            if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
+
+            if (!res.ok) {
+                lastErr = new Error(`HTTP ${res.status}`);
+                if (res.status === 503 || res.status === 429) continue; // 塞車換下一個模型
+                throw lastErr;
+            }
+            const json = await res.json();
+            const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const data = JSON.parse(rawText);
+            if (!data.civ_word || !data.spy_word || data.civ_clues?.length < 6 || data.spy_clues?.length < 2) {
+                throw new Error('格式異常');
+            }
+            return { data, theme: actualTheme, model };
+        } catch (e) {
+            clearTimeout(timer);
+            if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
+            if (externalSignal && externalSignal.aborted) throw e;
+            lastErr = e;
+        }
+    }
+    throw lastErr || new Error('連線失敗');
+}
+
+// 背景預先載入下一題
+function triggerBackgroundPreload() {
+    const s = getSettings();
+    if (s.mode !== 'ai' || !s.apiKey) {
+        setPreloadBadge('idle');
+        return;
+    }
+
+    const key = getConfigKey();
+    if (preloadedData && preloadedData.key === key) {
+        setPreloadBadge('ready');
+        return;
+    }
+    if (preloadPromise && preloadPromiseKey === key) {
+        return;
+    }
+
+    invalidatePreload();
+    preloadController = new AbortController();
+    preloadPromiseKey = key;
+    setPreloadBadge('loading');
+
+    const theme = getActiveTheme();
+    const diff = selectedDifficulty;
+
+    preloadPromise = fetchFromGemini(s.apiKey, s.model, theme, diff, preloadController.signal)
+        .then(res => {
+            if (preloadPromiseKey === key) {
+                preloadedData = { key, ...res };
+                setPreloadBadge('ready');
+            }
+            return res;
+        })
+        .catch(() => {
+            if (preloadPromiseKey === key) {
+                setPreloadBadge('idle');
+            }
+            return null;
+        })
+        .finally(() => {
+            if (preloadPromiseKey === key) {
+                preloadPromise = null;
+            }
+        });
+}
+
+async function startNewGame() {
+    const s = getSettings();
+    const activeTheme = getActiveTheme();
+    const diff = DIFF_CONFIG[selectedDifficulty] || DIFF_CONFIG.normal;
+    const currentKey = getConfigKey();
+
+    let civWord, spyWord, civClues, spyClues, modeText = '內建題庫';
+    let notice = '';
+
+    if (s.mode === 'ai' && s.apiKey) {
+        // 1. 優先使用已預載好的題目（0秒開局！）
+        if (preloadedData && preloadedData.key === currentKey) {
+            const res = preloadedData;
+            preloadedData = null;
+            setPreloadBadge('idle');
+            civWord = res.data.civ_word;
+            spyWord = res.data.spy_word;
+            civClues = shuffle(res.data.civ_clues);
+            spyClues = shuffle(res.data.spy_clues);
+            modeText = `AI 出題（${res.theme}）`;
+        } else {
+            document.getElementById('loading-overlay').classList.add('show');
+            try {
+                let res = null;
+                // 2. 若背景剛好正在抓相同設定的題目，直接等它完成不重複發請求
+                if (preloadPromise && preloadPromiseKey === currentKey) {
+                    res = await preloadPromise;
+                    if (preloadedData && preloadedData.key === currentKey) {
+                        res = preloadedData;
+                        preloadedData = null;
+                    }
+                }
+                if (!res) {
+                    res = await fetchFromGemini(s.apiKey, s.model, activeTheme, selectedDifficulty);
+                }
+                civWord = res.data.civ_word;
+                spyWord = res.data.spy_word;
+                civClues = shuffle(res.data.civ_clues);
+                spyClues = shuffle(res.data.spy_clues);
+                modeText = `AI 出題（${res.theme}）`;
+            } catch (err) {
+                notice = `⚠️ AI 暫時忙碌（${err.name === 'AbortError' ? '超時' : err.message}），已自動切換內建題庫。`;
+            } finally {
+                document.getElementById('loading-overlay').classList.remove('show');
+            }
+        }
+    }
+
+    // 離線題庫（支援主題篩選）
+    if (!civWord) {
+        let pool = OFFLINE_BANK;
+        if (activeTheme !== '隨機') {
+            const filtered = OFFLINE_BANK.filter(item => item.category === activeTheme);
+            if (filtered.length > 0) pool = filtered;
+        }
+        let idx;
+        if (pool.length === 1) {
+            idx = 0;
+        } else {
+            do { idx = Math.floor(Math.random() * pool.length); } while (pool === OFFLINE_BANK && idx === lastOfflineIdx);
+        }
+        if (pool === OFFLINE_BANK) lastOfflineIdx = idx;
+
+        const pair = pool[idx];
+        const swap = Math.random() < 0.5;
+        civWord = swap ? pair.wordB : pair.wordA;
+        spyWord = swap ? pair.wordA : pair.wordB;
+        civClues = shuffle(swap ? pair.cluesB : pair.cluesA);
+        spyClues = shuffle(swap ? pair.cluesA : pair.cluesB);
+        modeText = `內建題庫（${pair.category}）`;
+    }
+
+    // 寫入歷史黑名單（這樣背景預載下一題時也會自動避開這一題！）
+    addToHistory(civWord, spyWord);
+
+    const spyId = Math.floor(Math.random() * BOTS.length);
+    let cIdx = 0, sIdx = 0;
+    const players = BOTS.map(b => {
+        const isSpy = b.id === spyId;
+        return {
+            ...b,
+            isSpy,
+            word: isSpy ? spyWord : civWord,
+            clues: {
+                1: isSpy ? spyClues[sIdx++] : civClues[cIdx++],
+                2: isSpy ? spyClues[sIdx++] : civClues[cIdx++]
+            },
+            eliminated: false
+        };
+    });
+
+    game = {
+        players,
+        spyId,
+        civWord,
+        spyWord,
+        hintWords: shuffle([civWord, spyWord]),
+        round: 1,
+        maxRounds: 2,
+        chances: diff.chances,
+        showHint: false,
+        status: 'playing',
+        modeText,
+        message: notice || (selectedDifficulty === 'hell'
+            ? '🔥 地獄模式啟動！只有 1 次指認機會，請仔細揪出微小的破綻！'
+            : '第 1 輪發言完畢！請觀察誰的描述跟大家不太一樣。')
+    };
+
+    render();
+
+    // 開局後 600ms 自動在背景預先載入下一題
+    setTimeout(() => triggerBackgroundPreload(), 600);
+}
+
+function nextRound() {
+    if (game.round < game.maxRounds && game.status === 'playing') {
+        game.round++;
+        game.message = '已進入第 2 輪發言！這是最後一輪線索，找出真正的臥底吧。';
+        render();
+    }
+}
+
+function toggleHint() {
+    game.showHint = true;
+    render();
+}
+
+function accuse(playerId) {
+    if (game.status !== 'playing') return;
+    const p = game.players.find(x => x.id === playerId);
+    if (!p || p.eliminated) return;
+
+    if (p.isSpy) {
+        game.status = 'won';
+        streak++;
+        localStorage.setItem('undercover_streak', streak);
+        game.message = `🎉 推理成功！${p.name} 就是隱藏在其中的臥底！`;
+    } else {
+        p.eliminated = true;
+        game.chances--;
+        if (game.chances <= 0) {
+            game.status = 'lost';
+            streak = 0;
+            localStorage.setItem('undercover_streak', streak);
+            const spy = game.players.find(x => x.isSpy);
+            game.message = `💀 推理失敗！${p.name} 只是平民，真正的臥底是 ${spy.name}！`;
+        } else {
+            game.message = `❌ 猜錯了！${p.name} 是平民（已排除），還剩 ${game.chances} 次機會！`;
+        }
+    }
+    render();
+}
+
+function render() {
+    document.getElementById('mode-label').textContent = `目前模式：${game.modeText}`;
+    document.getElementById('stat-round').textContent = `第 ${game.round} / ${game.maxRounds} 輪`;
+    document.getElementById('stat-chances').textContent = `❤️ ${game.chances} 次`;
+    document.getElementById('stat-streak').textContent = `🔥 ${streak} 連勝`;
+
+    const msgBox = document.getElementById('message-box');
+    msgBox.className = `message-box ${game.status}`;
+    msgBox.textContent = game.message;
+
+    const hintBox = document.getElementById('hint-box');
+    if (game.showHint && game.status === 'playing') {
+        hintBox.style.display = 'block';
+        hintBox.innerHTML = `💡 本局詞彙：「<strong>${game.hintWords[0]}</strong>」與「<strong>${game.hintWords[1]}</strong>」`;
+    } else {
+        hintBox.style.display = 'none';
+    }
+
+    const ansBox = document.getElementById('answer-reveal');
+    if (game.status !== 'playing') {
+        ansBox.style.display = 'flex';
+        ansBox.innerHTML = `<div>👤 平民：<strong style="color:var(--accent)">${game.civWord}</strong></div><div>🕵️ 臥底：<strong style="color:var(--danger)">${game.spyWord}</strong></div>`;
+    } else {
+        ansBox.style.display = 'none';
+    }
+
+    const isEnded = game.status !== 'playing';
+    const container = document.getElementById('players-container');
+    container.innerHTML = game.players.map(p => {
+        let cls = 'player-card';
+        if (p.eliminated) cls += ' eliminated';
+        if (isEnded && p.isSpy) cls += ' spy-reveal';
+
+        let tagHtml = '';
+        if (isEnded) {
+            tagHtml = `<span class="tag ${p.isSpy ? 'tag-spy' : 'tag-civ'}">${p.isSpy ? '臥底' : '平民'}（${p.word}）</span>`;
+        } else if (p.eliminated) {
+            tagHtml = `<span class="tag tag-civ">已排除（平民）</span>`;
+        }
+
+        let cluesHtml = '';
+        for (let r = 1; r <= game.round; r++) {
+            cluesHtml += `<div class="clue-item"><span class="clue-round">第 ${r} 輪發言</span>「${p.clues[r]}」</div>`;
+        }
+
+        const btnHtml = (!isEnded && !p.eliminated)
+            ? `<button class="btn btn-accuse" onclick="accuse(${p.id})">👉 指認 ${p.name} 是臥底</button>`
+            : '';
+
+        return `
+            <div class="${cls}">
+                <div class="player-header">
+                    <div class="player-name">${p.avatar} ${p.name}</div>
+                    ${tagHtml}
+                </div>
+                ${cluesHtml}
+                ${btnHtml}
+            </div>
+        `;
+    }).join('');
+
+    const controls = document.getElementById('controls');
+    if (!isEnded) {
+        let html = '';
+        if (game.round < game.maxRounds) {
+            html += `<button class="btn btn-primary" onclick="nextRound()">💬 聽取第 ${game.round + 1} 輪發言</button>`;
+        }
+        html += `<div class="controls-row">`;
+        html += !game.showHint
+            ? `<button class="btn btn-warning" onclick="toggleHint()">💡 查看詞彙提示</button>`
+            : `<button class="btn btn-secondary" disabled>已顯示提示</button>`;
+        html += `<button class="btn btn-secondary" onclick="startNewGame()">🔄 換一局</button>`;
+        html += `</div>`;
+        controls.innerHTML = html;
+    } else {
+        controls.innerHTML = `<button class="btn btn-primary" onclick="startNewGame()">🎮 再玩一局</button>`;
+    }
+}
+
+// 啟動遊戲
+initSetupUI();
+startNewGame();
+</script>
+</body>
+</html>
